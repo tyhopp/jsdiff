@@ -1,4 +1,4 @@
-const { terser } = require(`rollup-plugin-terser`);
+import { terser } from "rollup-plugin-terser";
 
 const config = [
   {
@@ -13,4 +13,4 @@ const config = [
   },
 ];
 
-module.exports = config;
+export default config;
