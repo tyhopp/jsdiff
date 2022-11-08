@@ -1,8 +1,10 @@
-import Diff from './base';
+import Diff from "./base.js";
 
 export const cssDiff = new Diff();
-cssDiff.tokenize = function(value) {
+cssDiff.tokenize = function (value) {
   return value.split(/([{}:;,]|\s+)/);
 };
 
-export function diffCss(oldStr, newStr, callback) { return cssDiff.diff(oldStr, newStr, callback); }
+export function diffCss(oldStr, newStr, callback) {
+  return cssDiff.diff(oldStr, newStr, callback);
+}

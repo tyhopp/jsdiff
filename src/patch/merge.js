@@ -1,10 +1,9 @@
-import {structuredPatch} from './create';
-import {parsePatch} from './parse';
-
-import {arrayEqual, arrayStartsWith} from '../util/array';
+import { structuredPatch } from "./create.js";
+import { parsePatch } from "./parse.js";
+import { arrayEqual, arrayStartsWith } from "../util/array.js";
 
 export function calcLineCount(hunk) {
-  const {oldLines, newLines} = calcOldNewLineCount(hunk.lines);
+  const { oldLines, newLines } = calcOldNewLineCount(hunk.lines);
 
   if (oldLines !== undefined) {
     hunk.oldLines = oldLines;
@@ -57,13 +56,13 @@ export function merge(mine, theirs, base) {
   ret.hunks = [];
 
   let mineIndex = 0,
-      theirsIndex = 0,
-      mineOffset = 0,
-      theirsOffset = 0;
+    theirsIndex = 0,
+    mineOffset = 0,
+    theirsOffset = 0;
 
   while (mineIndex < mine.hunks.length || theirsIndex < theirs.hunks.length) {
-    let mineCurrent = mine.hunks[mineIndex] || {oldStart: Infinity},
-        theirsCurrent = theirs.hunks[theirsIndex] || {oldStart: Infinity};
+    let mineCurrent = mine.hunks[mineIndex] || { oldStart: Infinity },
+      theirsCurrent = theirs.hunks[theirsIndex] || { oldStart: Infinity };
 
     if (hunkBefore(mineCurrent, theirsCurrent)) {
       // This patch does not overlap with any of the others, yay.
@@ -80,11 +79,20 @@ export function merge(mine, theirs, base) {
       let mergedHunk = {
         oldStart: Math.min(mineCurrent.oldStart, theirsCurrent.oldStart),
         oldLines: 0,
-        newStart: Math.min(mineCurrent.newStart + mineOffset, theirsCurrent.oldStart + theirsOffset),
+        newStart: Math.min(
+          mineCurrent.newStart + mineOffset,
+          theirsCurrent.oldStart + theirsOffset
+        ),
         newLines: 0,
-        lines: []
+        lines: [],
       };
-      mergeLines(mergedHunk, mineCurrent.oldStart, mineCurrent.lines, theirsCurrent.oldStart, theirsCurrent.lines);
+      mergeLines(
+        mergedHunk,
+        mineCurrent.oldStart,
+        mineCurrent.lines,
+        theirsCurrent.oldStart,
+        theirsCurrent.lines
+      );
       theirsIndex++;
       mineIndex++;
 
@@ -96,13 +104,13 @@ export function merge(mine, theirs, base) {
 }
 
 function loadPatch(param, base) {
-  if (typeof param === 'string') {
-    if ((/^@@/m).test(param) || ((/^Index:/m).test(param))) {
+  if (typeof param === "string") {
+    if (/^@@/m.test(param) || /^Index:/m.test(param)) {
       return parsePatch(param)[0];
     }
 
     if (!base) {
-      throw new Error('Must provide a base reference or pass in a patch');
+      throw new Error("Must provide a base reference or pass in a patch");
     }
     return structuredPatch(undefined, undefined, base, param);
   }
@@ -119,28 +127,32 @@ function selectField(index, mine, theirs) {
     return mine;
   } else {
     index.conflict = true;
-    return {mine, theirs};
+    return { mine, theirs };
   }
 }
 
 function hunkBefore(test, check) {
-  return test.oldStart < check.oldStart
-    && (test.oldStart + test.oldLines) < check.oldStart;
+  return (
+    test.oldStart < check.oldStart &&
+    test.oldStart + test.oldLines < check.oldStart
+  );
 }
 
 function cloneHunk(hunk, offset) {
   return {
-    oldStart: hunk.oldStart, oldLines: hunk.oldLines,
-    newStart: hunk.newStart + offset, newLines: hunk.newLines,
-    lines: hunk.lines
+    oldStart: hunk.oldStart,
+    oldLines: hunk.oldLines,
+    newStart: hunk.newStart + offset,
+    newLines: hunk.newLines,
+    lines: hunk.lines,
   };
 }
 
 function mergeLines(hunk, mineOffset, mineLines, theirOffset, theirLines) {
   // This will generally result in a conflicted hunk, but there are cases where the context
   // is the only overlap where we can successfully merge the content here.
-  let mine = {offset: mineOffset, lines: mineLines, index: 0},
-      their = {offset: theirOffset, lines: theirLines, index: 0};
+  let mine = { offset: mineOffset, lines: mineLines, index: 0 },
+    their = { offset: theirOffset, lines: theirLines, index: 0 };
 
   // Handle any leading content
   insertLeading(hunk, mine, their);
@@ -149,22 +161,24 @@ function mergeLines(hunk, mineOffset, mineLines, theirOffset, theirLines) {
   // Now in the overlap content. Scan through and select the best changes from each.
   while (mine.index < mine.lines.length && their.index < their.lines.length) {
     let mineCurrent = mine.lines[mine.index],
-        theirCurrent = their.lines[their.index];
+      theirCurrent = their.lines[their.index];
 
-    if ((mineCurrent[0] === '-' || mineCurrent[0] === '+')
-        && (theirCurrent[0] === '-' || theirCurrent[0] === '+')) {
+    if (
+      (mineCurrent[0] === "-" || mineCurrent[0] === "+") &&
+      (theirCurrent[0] === "-" || theirCurrent[0] === "+")
+    ) {
       // Both modified ...
       mutualChange(hunk, mine, their);
-    } else if (mineCurrent[0] === '+' && theirCurrent[0] === ' ') {
+    } else if (mineCurrent[0] === "+" && theirCurrent[0] === " ") {
       // Mine inserted
-      hunk.lines.push(... collectChange(mine));
-    } else if (theirCurrent[0] === '+' && mineCurrent[0] === ' ') {
+      hunk.lines.push(...collectChange(mine));
+    } else if (theirCurrent[0] === "+" && mineCurrent[0] === " ") {
       // Theirs inserted
-      hunk.lines.push(... collectChange(their));
-    } else if (mineCurrent[0] === '-' && theirCurrent[0] === ' ') {
+      hunk.lines.push(...collectChange(their));
+    } else if (mineCurrent[0] === "-" && theirCurrent[0] === " ") {
       // Mine removed or edited
       removal(hunk, mine, their);
-    } else if (theirCurrent[0] === '-' && mineCurrent[0] === ' ') {
+    } else if (theirCurrent[0] === "-" && mineCurrent[0] === " ") {
       // Their removed or edited
       removal(hunk, their, mine, true);
     } else if (mineCurrent === theirCurrent) {
@@ -187,21 +201,33 @@ function mergeLines(hunk, mineOffset, mineLines, theirOffset, theirLines) {
 
 function mutualChange(hunk, mine, their) {
   let myChanges = collectChange(mine),
-      theirChanges = collectChange(their);
+    theirChanges = collectChange(their);
 
   if (allRemoves(myChanges) && allRemoves(theirChanges)) {
     // Special case for remove changes that are supersets of one another
-    if (arrayStartsWith(myChanges, theirChanges)
-        && skipRemoveSuperset(their, myChanges, myChanges.length - theirChanges.length)) {
-      hunk.lines.push(... myChanges);
+    if (
+      arrayStartsWith(myChanges, theirChanges) &&
+      skipRemoveSuperset(
+        their,
+        myChanges,
+        myChanges.length - theirChanges.length
+      )
+    ) {
+      hunk.lines.push(...myChanges);
       return;
-    } else if (arrayStartsWith(theirChanges, myChanges)
-        && skipRemoveSuperset(mine, theirChanges, theirChanges.length - myChanges.length)) {
-      hunk.lines.push(... theirChanges);
+    } else if (
+      arrayStartsWith(theirChanges, myChanges) &&
+      skipRemoveSuperset(
+        mine,
+        theirChanges,
+        theirChanges.length - myChanges.length
+      )
+    ) {
+      hunk.lines.push(...theirChanges);
       return;
     }
   } else if (arrayEqual(myChanges, theirChanges)) {
-    hunk.lines.push(... myChanges);
+    hunk.lines.push(...myChanges);
     return;
   }
 
@@ -210,11 +236,15 @@ function mutualChange(hunk, mine, their) {
 
 function removal(hunk, mine, their, swap) {
   let myChanges = collectChange(mine),
-      theirChanges = collectContext(their, myChanges);
+    theirChanges = collectContext(their, myChanges);
   if (theirChanges.merged) {
-    hunk.lines.push(... theirChanges.merged);
+    hunk.lines.push(...theirChanges.merged);
   } else {
-    conflict(hunk, swap ? theirChanges : myChanges, swap ? myChanges : theirChanges);
+    conflict(
+      hunk,
+      swap ? theirChanges : myChanges,
+      swap ? myChanges : theirChanges
+    );
   }
 }
 
@@ -223,7 +253,7 @@ function conflict(hunk, mine, their) {
   hunk.lines.push({
     conflict: true,
     mine: mine,
-    theirs: their
+    theirs: their,
   });
 }
 
@@ -243,13 +273,13 @@ function insertTrailing(hunk, insert) {
 
 function collectChange(state) {
   let ret = [],
-      operation = state.lines[state.index][0];
+    operation = state.lines[state.index][0];
   while (state.index < state.lines.length) {
     let line = state.lines[state.index];
 
     // Group additions that are immediately after subtractions and treat them as one "atomic" modify change.
-    if (operation === '-' && line[0] === '+') {
-      operation = '+';
+    if (operation === "-" && line[0] === "+") {
+      operation = "+";
     }
 
     if (operation === line[0]) {
@@ -264,31 +294,30 @@ function collectChange(state) {
 }
 function collectContext(state, matchChanges) {
   let changes = [],
-      merged = [],
-      matchIndex = 0,
-      contextChanges = false,
-      conflicted = false;
-  while (matchIndex < matchChanges.length
-        && state.index < state.lines.length) {
+    merged = [],
+    matchIndex = 0,
+    contextChanges = false,
+    conflicted = false;
+  while (matchIndex < matchChanges.length && state.index < state.lines.length) {
     let change = state.lines[state.index],
-        match = matchChanges[matchIndex];
+      match = matchChanges[matchIndex];
 
     // Once we've hit our add, then we are done
-    if (match[0] === '+') {
+    if (match[0] === "+") {
       break;
     }
 
-    contextChanges = contextChanges || change[0] !== ' ';
+    contextChanges = contextChanges || change[0] !== " ";
 
     merged.push(match);
     matchIndex++;
 
     // Consume any additions in the other block as a conflict to attempt
     // to pull in the remaining context after this
-    if (change[0] === '+') {
+    if (change[0] === "+") {
       conflicted = true;
 
-      while (change[0] === '+') {
+      while (change[0] === "+") {
         changes.push(change);
         change = state.lines[++state.index];
       }
@@ -302,8 +331,7 @@ function collectContext(state, matchChanges) {
     }
   }
 
-  if ((matchChanges[matchIndex] || '')[0] === '+'
-      && contextChanges) {
+  if ((matchChanges[matchIndex] || "")[0] === "+" && contextChanges) {
     conflicted = true;
   }
 
@@ -317,19 +345,20 @@ function collectContext(state, matchChanges) {
 
   return {
     merged,
-    changes
+    changes,
   };
 }
 
 function allRemoves(changes) {
-  return changes.reduce(function(prev, change) {
-    return prev && change[0] === '-';
+  return changes.reduce(function (prev, change) {
+    return prev && change[0] === "-";
   }, true);
 }
 function skipRemoveSuperset(state, removeChanges, delta) {
   for (let i = 0; i < delta; i++) {
-    let changeContent = removeChanges[removeChanges.length - delta + i].substr(1);
-    if (state.lines[state.index + i] !== ' ' + changeContent) {
+    let changeContent =
+      removeChanges[removeChanges.length - delta + i].substr(1);
+    if (state.lines[state.index + i] !== " " + changeContent) {
       return false;
     }
   }
@@ -342,8 +371,8 @@ function calcOldNewLineCount(lines) {
   let oldLines = 0;
   let newLines = 0;
 
-  lines.forEach(function(line) {
-    if (typeof line !== 'string') {
+  lines.forEach(function (line) {
+    if (typeof line !== "string") {
       let myCount = calcOldNewLineCount(line.mine);
       let theirCount = calcOldNewLineCount(line.theirs);
 
@@ -363,14 +392,14 @@ function calcOldNewLineCount(lines) {
         }
       }
     } else {
-      if (newLines !== undefined && (line[0] === '+' || line[0] === ' ')) {
+      if (newLines !== undefined && (line[0] === "+" || line[0] === " ")) {
         newLines++;
       }
-      if (oldLines !== undefined && (line[0] === '-' || line[0] === ' ')) {
+      if (oldLines !== undefined && (line[0] === "-" || line[0] === " ")) {
         oldLines++;
       }
     }
   });
 
-  return {oldLines, newLines};
+  return { oldLines, newLines };
 }

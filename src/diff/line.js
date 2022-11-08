@@ -1,10 +1,10 @@
-import Diff from './base';
-import {generateOptions} from '../util/params';
+import Diff from "./base.js";
+import { generateOptions } from "../util/params.js";
 
 export const lineDiff = new Diff();
-lineDiff.tokenize = function(value) {
+lineDiff.tokenize = function (value) {
   let retLines = [],
-      linesAndNewlines = value.split(/(\n|\r\n)/);
+    linesAndNewlines = value.split(/(\n|\r\n)/);
 
   // Ignore the final empty token that occurs if the string ends with a new line
   if (!linesAndNewlines[linesAndNewlines.length - 1]) {
@@ -28,8 +28,10 @@ lineDiff.tokenize = function(value) {
   return retLines;
 };
 
-export function diffLines(oldStr, newStr, callback) { return lineDiff.diff(oldStr, newStr, callback); }
+export function diffLines(oldStr, newStr, callback) {
+  return lineDiff.diff(oldStr, newStr, callback);
+}
 export function diffTrimmedLines(oldStr, newStr, callback) {
-  let options = generateOptions(callback, {ignoreWhitespace: true});
+  let options = generateOptions(callback, { ignoreWhitespace: true });
   return lineDiff.diff(oldStr, newStr, options);
 }
