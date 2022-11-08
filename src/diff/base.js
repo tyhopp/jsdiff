@@ -3,7 +3,7 @@ export default function Diff() {}
 Diff.prototype = {
   diff(oldString, newString, options = {}) {
     let callback = options.callback;
-    if (typeof options === 'function') {
+    if (typeof options === "function") {
       callback = options;
       options = {};
     }
@@ -13,7 +13,9 @@ Diff.prototype = {
 
     function done(value) {
       if (callback) {
-        setTimeout(function() { callback(undefined, value); }, 0);
+        setTimeout(function () {
+          callback(undefined, value);
+        }, 0);
         return true;
       } else {
         return value;
@@ -27,10 +29,11 @@ Diff.prototype = {
     oldString = this.removeEmpty(this.tokenize(oldString));
     newString = this.removeEmpty(this.tokenize(newString));
 
-    let newLen = newString.length, oldLen = oldString.length;
+    let newLen = newString.length,
+      oldLen = oldString.length;
     let editLength = 1;
     let maxEditLength = newLen + oldLen;
-    if(options.maxEditLength) {
+    if (options.maxEditLength) {
       maxEditLength = Math.min(maxEditLength, options.maxEditLength);
     }
 
@@ -40,23 +43,27 @@ Diff.prototype = {
     let oldPos = this.extractCommon(bestPath[0], newString, oldString, 0);
     if (bestPath[0].newPos + 1 >= newLen && oldPos + 1 >= oldLen) {
       // Identity per the equality and tokenizer
-      return done([{value: this.join(newString), count: newString.length}]);
+      return done([{ value: this.join(newString), count: newString.length }]);
     }
 
     // Main worker method. checks all permutations of a given edit length for acceptance.
     function execEditLength() {
-      for (let diagonalPath = -1 * editLength; diagonalPath <= editLength; diagonalPath += 2) {
+      for (
+        let diagonalPath = -1 * editLength;
+        diagonalPath <= editLength;
+        diagonalPath += 2
+      ) {
         let basePath;
         let addPath = bestPath[diagonalPath - 1],
-            removePath = bestPath[diagonalPath + 1],
-            oldPos = (removePath ? removePath.newPos : 0) - diagonalPath;
+          removePath = bestPath[diagonalPath + 1],
+          oldPos = (removePath ? removePath.newPos : 0) - diagonalPath;
         if (addPath) {
           // No one else is going to attempt to use this value, clear it
           bestPath[diagonalPath - 1] = undefined;
         }
 
         let canAdd = addPath && addPath.newPos + 1 < newLen,
-            canRemove = removePath && 0 <= oldPos && oldPos < oldLen;
+          canRemove = removePath && 0 <= oldPos && oldPos < oldLen;
         if (!canAdd && !canRemove) {
           // If this path is a terminal then prune
           bestPath[diagonalPath] = undefined;
@@ -75,11 +82,24 @@ Diff.prototype = {
           self.pushComponent(basePath.components, true, undefined);
         }
 
-        oldPos = self.extractCommon(basePath, newString, oldString, diagonalPath);
+        oldPos = self.extractCommon(
+          basePath,
+          newString,
+          oldString,
+          diagonalPath
+        );
 
         // If we have hit the end of both strings, then we are done
         if (basePath.newPos + 1 >= newLen && oldPos + 1 >= oldLen) {
-          return done(buildValues(self, basePath.components, newString, oldString, self.useLongestToken));
+          return done(
+            buildValues(
+              self,
+              basePath.components,
+              newString,
+              oldString,
+              self.useLongestToken
+            )
+          );
         } else {
           // Otherwise track this path as a potential candidate and continue.
           bestPath[diagonalPath] = basePath;
@@ -95,7 +115,7 @@ Diff.prototype = {
     // in which case it will return undefined.
     if (callback) {
       (function exec() {
-        setTimeout(function() {
+        setTimeout(function () {
           if (editLength > maxEditLength) {
             return callback();
           }
@@ -104,7 +124,7 @@ Diff.prototype = {
             exec();
           }
         }, 0);
-      }());
+      })();
     } else {
       while (editLength <= maxEditLength) {
         let ret = execEditLength();
@@ -120,26 +140,33 @@ Diff.prototype = {
     if (last && last.added === added && last.removed === removed) {
       // We need to clone here as the component clone operation is just
       // as shallow array clone
-      components[components.length - 1] = {count: last.count + 1, added: added, removed: removed };
+      components[components.length - 1] = {
+        count: last.count + 1,
+        added: added,
+        removed: removed,
+      };
     } else {
-      components.push({count: 1, added: added, removed: removed });
+      components.push({ count: 1, added: added, removed: removed });
     }
   },
   extractCommon(basePath, newString, oldString, diagonalPath) {
     let newLen = newString.length,
-        oldLen = oldString.length,
-        newPos = basePath.newPos,
-        oldPos = newPos - diagonalPath,
-
-        commonCount = 0;
-    while (newPos + 1 < newLen && oldPos + 1 < oldLen && this.equals(newString[newPos + 1], oldString[oldPos + 1])) {
+      oldLen = oldString.length,
+      newPos = basePath.newPos,
+      oldPos = newPos - diagonalPath,
+      commonCount = 0;
+    while (
+      newPos + 1 < newLen &&
+      oldPos + 1 < oldLen &&
+      this.equals(newString[newPos + 1], oldString[oldPos + 1])
+    ) {
       newPos++;
       oldPos++;
       commonCount++;
     }
 
     if (commonCount) {
-      basePath.components.push({count: commonCount});
+      basePath.components.push({ count: commonCount });
     }
 
     basePath.newPos = newPos;
@@ -150,8 +177,10 @@ Diff.prototype = {
     if (this.options.comparator) {
       return this.options.comparator(left, right);
     } else {
-      return left === right
-        || (this.options.ignoreCase && left.toLowerCase() === right.toLowerCase());
+      return (
+        left === right ||
+        (this.options.ignoreCase && left.toLowerCase() === right.toLowerCase())
+      );
     }
   },
   removeEmpty(array) {
@@ -167,32 +196,34 @@ Diff.prototype = {
     return value;
   },
   tokenize(value) {
-    return value.split('');
+    return value.split("");
   },
   join(chars) {
-    return chars.join('');
-  }
+    return chars.join("");
+  },
 };
 
 function buildValues(diff, components, newString, oldString, useLongestToken) {
   let componentPos = 0,
-      componentLen = components.length,
-      newPos = 0,
-      oldPos = 0;
+    componentLen = components.length,
+    newPos = 0,
+    oldPos = 0;
 
   for (; componentPos < componentLen; componentPos++) {
     let component = components[componentPos];
     if (!component.removed) {
       if (!component.added && useLongestToken) {
         let value = newString.slice(newPos, newPos + component.count);
-        value = value.map(function(value, i) {
+        value = value.map(function (value, i) {
           let oldValue = oldString[oldPos + i];
           return oldValue.length > value.length ? oldValue : value;
         });
 
         component.value = diff.join(value);
       } else {
-        component.value = diff.join(newString.slice(newPos, newPos + component.count));
+        component.value = diff.join(
+          newString.slice(newPos, newPos + component.count)
+        );
       }
       newPos += component.count;
 
@@ -201,7 +232,9 @@ function buildValues(diff, components, newString, oldString, useLongestToken) {
         oldPos += component.count;
       }
     } else {
-      component.value = diff.join(oldString.slice(oldPos, oldPos + component.count));
+      component.value = diff.join(
+        oldString.slice(oldPos, oldPos + component.count)
+      );
       oldPos += component.count;
 
       // Reverse add and remove so removes are output first to match common convention
@@ -219,10 +252,12 @@ function buildValues(diff, components, newString, oldString, useLongestToken) {
   // For this case we merge the terminal into the prior string and drop the change.
   // This is only available for string mode.
   let lastComponent = components[componentLen - 1];
-  if (componentLen > 1
-      && typeof lastComponent.value === 'string'
-      && (lastComponent.added || lastComponent.removed)
-      && diff.equals('', lastComponent.value)) {
+  if (
+    componentLen > 1 &&
+    typeof lastComponent.value === "string" &&
+    (lastComponent.added || lastComponent.removed) &&
+    diff.equals("", lastComponent.value)
+  ) {
     components[componentLen - 2].value += lastComponent.value;
     components.pop();
   }

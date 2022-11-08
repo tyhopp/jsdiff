@@ -1,353 +1,337 @@
-import {merge} from '../../lib/patch/merge';
-import {parsePatch} from '../../lib/patch/parse';
+import { merge } from "../../src/patch/merge.js";
+import { parsePatch } from "../../src/patch/parse.js";
 
-import {expect} from 'chai';
+import { describe, it } from "node:test";
+import { expect } from "chai";
 
-describe('patch/merge', function() {
-  describe('#merge', function() {
-    it('should update line numbers for no conflicts', function() {
+describe("patch/merge", function () {
+  describe("#merge", function () {
+    it("should update line numbers for no conflicts", function () {
       const mine =
-            'Index: test\n'
-            + '===================================================================\n'
-            + '--- test\theader1\n'
-            + '+++ test\theader2\n'
-            + '@@ -1,3 +1,4 @@\n'
-            + ' line2\n'
-            + ' line3\n'
-            + '+line4\n'
-            + ' line5\n';
+        "Index: test\n" +
+        "===================================================================\n" +
+        "--- test\theader1\n" +
+        "+++ test\theader2\n" +
+        "@@ -1,3 +1,4 @@\n" +
+        " line2\n" +
+        " line3\n" +
+        "+line4\n" +
+        " line5\n";
       const theirs =
-            'Index: test\n'
-            + '===================================================================\n'
-            + '--- test\theader1\n'
-            + '+++ test\theader2\n'
-            + '@@ -25,3 +25,4 @@\n'
-            + ' foo2\n'
-            + ' foo3\n'
-            + '+foo4\n'
-            + ' foo5\n';
+        "Index: test\n" +
+        "===================================================================\n" +
+        "--- test\theader1\n" +
+        "+++ test\theader2\n" +
+        "@@ -25,3 +25,4 @@\n" +
+        " foo2\n" +
+        " foo3\n" +
+        "+foo4\n" +
+        " foo5\n";
 
       const expected = {
-        index: 'test',
-        oldFileName: 'test',
-        oldHeader: 'header1',
-        newFileName: 'test',
-        newHeader: 'header2',
+        index: "test",
+        oldFileName: "test",
+        oldHeader: "header1",
+        newFileName: "test",
+        newHeader: "header2",
         hunks: [
           {
-            oldStart: 1, oldLines: 3,
-            newStart: 1, newLines: 4,
-            lines: [
-              ' line2',
-              ' line3',
-              '+line4',
-              ' line5'
-            ]
+            oldStart: 1,
+            oldLines: 3,
+            newStart: 1,
+            newLines: 4,
+            lines: [" line2", " line3", "+line4", " line5"],
           },
           {
-            oldStart: 25, oldLines: 3,
-            newStart: 26, newLines: 4,
-            lines: [
-              ' foo2',
-              ' foo3',
-              '+foo4',
-              ' foo5'
-            ]
-          }
-        ]
+            oldStart: 25,
+            oldLines: 3,
+            newStart: 26,
+            newLines: 4,
+            lines: [" foo2", " foo3", "+foo4", " foo5"],
+          },
+        ],
       };
 
       expect(merge(mine, theirs)).to.eql(expected);
       expect(merge(theirs, mine)).to.eql(expected);
     });
-    it('should remove identical hunks', function() {
+    it("should remove identical hunks", function () {
       const mine =
-            'Index: test\n'
-            + '===================================================================\n'
-            + '--- test\theader1\n'
-            + '+++ test\theader2\n'
-            + '@@ -1,3 +1,4 @@\n'
-            + ' line2\n'
-            + ' line3\n'
-            + '+line4\n'
-            + ' line5\n';
+        "Index: test\n" +
+        "===================================================================\n" +
+        "--- test\theader1\n" +
+        "+++ test\theader2\n" +
+        "@@ -1,3 +1,4 @@\n" +
+        " line2\n" +
+        " line3\n" +
+        "+line4\n" +
+        " line5\n";
       const theirs =
-            'Index: test\n'
-            + '===================================================================\n'
-            + '--- test\theader1\n'
-            + '+++ test\theader2\n'
-            + '@@ -1,3 +1,4 @@\n'
-            + ' line2\n'
-            + ' line3\n'
-            + '+line4\n'
-            + ' line5\n';
+        "Index: test\n" +
+        "===================================================================\n" +
+        "--- test\theader1\n" +
+        "+++ test\theader2\n" +
+        "@@ -1,3 +1,4 @@\n" +
+        " line2\n" +
+        " line3\n" +
+        "+line4\n" +
+        " line5\n";
 
       const expected = {
-        index: 'test',
-        oldFileName: 'test',
-        oldHeader: 'header1',
-        newFileName: 'test',
-        newHeader: 'header2',
+        index: "test",
+        oldFileName: "test",
+        oldHeader: "header1",
+        newFileName: "test",
+        newHeader: "header2",
         hunks: [
           {
-            oldStart: 1, oldLines: 3,
-            newStart: 1, newLines: 4,
-            lines: [
-              ' line2',
-              ' line3',
-              '+line4',
-              ' line5'
-            ]
-          }
-        ]
+            oldStart: 1,
+            oldLines: 3,
+            newStart: 1,
+            newLines: 4,
+            lines: [" line2", " line3", "+line4", " line5"],
+          },
+        ],
       };
 
       expect(merge(mine, theirs)).to.eql(expected);
       expect(merge(theirs, mine)).to.eql(expected);
     });
-    describe('hunk merge', function() {
-      it('should merge adjacent additions', function() {
+    describe("hunk merge", function () {
+      it("should merge adjacent additions", function () {
         const mine =
-              'Index: test\n'
-              + '===================================================================\n'
-              + '--- test\theader1\n'
-              + '+++ test\theader2\n'
-              + '@@ -1,3 +1,4 @@\n'
-              + ' line2\n'
-              + ' line3\n'
-              + '+line4-1\n'
-              + '+line4-2\n'
-              + '+line4-3\n'
-              + ' line5\n';
+          "Index: test\n" +
+          "===================================================================\n" +
+          "--- test\theader1\n" +
+          "+++ test\theader2\n" +
+          "@@ -1,3 +1,4 @@\n" +
+          " line2\n" +
+          " line3\n" +
+          "+line4-1\n" +
+          "+line4-2\n" +
+          "+line4-3\n" +
+          " line5\n";
         const theirs =
-              'Index: test\n'
-              + '===================================================================\n'
-              + '--- test\theader1\n'
-              + '+++ test\theader2\n'
-              + '@@ -2,2 +2,3 @@\n'
-              + ' line3\n'
-              + ' line5\n'
-              + '+line4-4\n';
+          "Index: test\n" +
+          "===================================================================\n" +
+          "--- test\theader1\n" +
+          "+++ test\theader2\n" +
+          "@@ -2,2 +2,3 @@\n" +
+          " line3\n" +
+          " line5\n" +
+          "+line4-4\n";
 
         const expected = {
-          index: 'test',
-          oldFileName: 'test',
-          oldHeader: 'header1',
-          newFileName: 'test',
-          newHeader: 'header2',
+          index: "test",
+          oldFileName: "test",
+          oldHeader: "header1",
+          newFileName: "test",
+          newHeader: "header2",
           hunks: [
             {
-              oldStart: 1, oldLines: 3,
-              newStart: 1, newLines: 7,
+              oldStart: 1,
+              oldLines: 3,
+              newStart: 1,
+              newLines: 7,
               lines: [
-                ' line2',
-                ' line3',
-                '+line4-1',
-                '+line4-2',
-                '+line4-3',
-                ' line5',
-                '+line4-4'
-              ]
-            }
-          ]
+                " line2",
+                " line3",
+                "+line4-1",
+                "+line4-2",
+                "+line4-3",
+                " line5",
+                "+line4-4",
+              ],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
         expect(merge(theirs, mine)).to.eql(expected);
       });
-      it('should merge leading additions', function() {
+      it("should merge leading additions", function () {
         const mine =
-              'Index: test\n'
-              + '===================================================================\n'
-              + '--- test\theader1\n'
-              + '+++ test\theader2\n'
-              + '@@ -1,3 +1,4 @@\n'
-              + '+line2\n'
-              + ' line3\n'
-              + '+line4\n'
-              + ' line5\n';
+          "Index: test\n" +
+          "===================================================================\n" +
+          "--- test\theader1\n" +
+          "+++ test\theader2\n" +
+          "@@ -1,3 +1,4 @@\n" +
+          "+line2\n" +
+          " line3\n" +
+          "+line4\n" +
+          " line5\n";
         const theirs =
-              'Index: test\n'
-              + '===================================================================\n'
-              + '--- test\theader1\n'
-              + '+++ test\theader2\n'
-              + '@@ -3,1 +3,2 @@\n'
-              + ' line5\n'
-              + '+line4\n';
+          "Index: test\n" +
+          "===================================================================\n" +
+          "--- test\theader1\n" +
+          "+++ test\theader2\n" +
+          "@@ -3,1 +3,2 @@\n" +
+          " line5\n" +
+          "+line4\n";
 
         const expected = {
-          index: 'test',
-          oldFileName: 'test',
-          oldHeader: 'header1',
-          newFileName: 'test',
-          newHeader: 'header2',
+          index: "test",
+          oldFileName: "test",
+          oldHeader: "header1",
+          newFileName: "test",
+          newHeader: "header2",
           hunks: [
             {
-              oldStart: 1, oldLines: 2,
-              newStart: 1, newLines: 5,
-              lines: [
-                '+line2',
-                ' line3',
-                '+line4',
-                ' line5',
-                '+line4'
-              ]
-            }
-          ]
-        };
-
-        expect(merge(mine, theirs)).to.eql(expected);
-        expect(merge(theirs, mine)).to.eql(expected);
-      });
-
-      it('should merge adjacent removals', function() {
-        const mine =
-              'Index: test\n'
-              + '===================================================================\n'
-              + '--- test\theader1\n'
-              + '+++ test\theader2\n'
-              + '@@ -1,3 +1,4 @@\n'
-              + '-line2\n'
-              + '-line3\n'
-              + '+line4\n'
-              + ' line5\n';
-        const theirs =
-              'Index: test\n'
-              + '===================================================================\n'
-              + '--- test\theader1\n'
-              + '+++ test\theader2\n'
-              + '@@ -2,2 +2,3 @@\n'
-              + ' line3\n'
-              + ' line5\n'
-              + '+line4\n';
-
-        const expected = {
-          index: 'test',
-          oldFileName: 'test',
-          oldHeader: 'header1',
-          newFileName: 'test',
-          newHeader: 'header2',
-          hunks: [
-            {
-              oldStart: 1, oldLines: 3,
-              newStart: 1, newLines: 3,
-              lines: [
-                '-line2',
-                '-line3',
-                '+line4',
-                ' line5',
-                '+line4'
-              ]
-            }
-          ]
+              oldStart: 1,
+              oldLines: 2,
+              newStart: 1,
+              newLines: 5,
+              lines: ["+line2", " line3", "+line4", " line5", "+line4"],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
         expect(merge(theirs, mine)).to.eql(expected);
       });
 
-      it('should merge adjacent additions with context removal', function() {
+      it("should merge adjacent removals", function () {
         const mine =
-              'Index: test\n'
-              + '===================================================================\n'
-              + '--- test\theader1\n'
-              + '+++ test\theader2\n'
-              + '@@ -1,3 +1,4 @@\n'
-              + ' line2\n'
-              + ' line3\n'
-              + '+line4-1\n'
-              + '+line4-2\n'
-              + '+line4-3\n'
-              + '-line5\n';
+          "Index: test\n" +
+          "===================================================================\n" +
+          "--- test\theader1\n" +
+          "+++ test\theader2\n" +
+          "@@ -1,3 +1,4 @@\n" +
+          "-line2\n" +
+          "-line3\n" +
+          "+line4\n" +
+          " line5\n";
         const theirs =
-              'Index: test\n'
-              + '===================================================================\n'
-              + '--- test\theader1\n'
-              + '+++ test\theader2\n'
-              + '@@ -2,2 +2,3 @@\n'
-              + ' line3\n'
-              + ' line5\n'
-              + '+line4-4\n';
+          "Index: test\n" +
+          "===================================================================\n" +
+          "--- test\theader1\n" +
+          "+++ test\theader2\n" +
+          "@@ -2,2 +2,3 @@\n" +
+          " line3\n" +
+          " line5\n" +
+          "+line4\n";
 
         const expected = {
-          index: 'test',
-          oldFileName: 'test',
-          oldHeader: 'header1',
-          newFileName: 'test',
-          newHeader: 'header2',
+          index: "test",
+          oldFileName: "test",
+          oldHeader: "header1",
+          newFileName: "test",
+          newHeader: "header2",
           hunks: [
             {
-              oldStart: 1, oldLines: 3,
-              newStart: 1, newLines: 6,
-              lines: [
-                ' line2',
-                ' line3',
-                '+line4-1',
-                '+line4-2',
-                '+line4-3',
-                '-line5',
-                '+line4-4'
-              ]
-            }
-          ]
+              oldStart: 1,
+              oldLines: 3,
+              newStart: 1,
+              newLines: 3,
+              lines: ["-line2", "-line3", "+line4", " line5", "+line4"],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
         expect(merge(theirs, mine)).to.eql(expected);
       });
 
-      it('should merge removal supersets', function() {
+      it("should merge adjacent additions with context removal", function () {
         const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + ' line2\n'
-              + ' line3\n'
-              + '-line4\n'
-              + '-line4\n'
-              + ' line5\n';
+          "Index: test\n" +
+          "===================================================================\n" +
+          "--- test\theader1\n" +
+          "+++ test\theader2\n" +
+          "@@ -1,3 +1,4 @@\n" +
+          " line2\n" +
+          " line3\n" +
+          "+line4-1\n" +
+          "+line4-2\n" +
+          "+line4-3\n" +
+          "-line5\n";
         const theirs =
-              '@@ -1,3 +1,4 @@\n'
-              + ' line2\n'
-              + ' line3\n'
-              + '-line4\n'
-              + ' line4\n'
-              + ' line5\n';
+          "Index: test\n" +
+          "===================================================================\n" +
+          "--- test\theader1\n" +
+          "+++ test\theader2\n" +
+          "@@ -2,2 +2,3 @@\n" +
+          " line3\n" +
+          " line5\n" +
+          "+line4-4\n";
 
         const expected = {
+          index: "test",
+          oldFileName: "test",
+          oldHeader: "header1",
+          newFileName: "test",
+          newHeader: "header2",
           hunks: [
             {
-              oldStart: 1, oldLines: 5,
-              newStart: 1, newLines: 3,
+              oldStart: 1,
+              oldLines: 3,
+              newStart: 1,
+              newLines: 6,
               lines: [
-                ' line2',
-                ' line3',
-                '-line4',
-                '-line4',
-                ' line5'
-              ]
-            }
-          ]
+                " line2",
+                " line3",
+                "+line4-1",
+                "+line4-2",
+                "+line4-3",
+                "-line5",
+                "+line4-4",
+              ],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
         expect(merge(theirs, mine)).to.eql(expected);
       });
-      it('should conflict removal disjoint sets', function() {
+
+      it("should merge removal supersets", function () {
         const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + ' line2\n'
-              + ' line3\n'
-              + '-line4\n'
-              + '-line4\n'
-              + '-line4\n'
-              + ' line5\n';
+          "@@ -1,3 +1,4 @@\n" +
+          " line2\n" +
+          " line3\n" +
+          "-line4\n" +
+          "-line4\n" +
+          " line5\n";
         const theirs =
-              '@@ -1,3 +1,4 @@\n'
-              + ' line2\n'
-              + ' line3\n'
-              + '-line4\n'
-              + '-line4\n'
-              + '-line5\n'
-              + ' line5\n';
+          "@@ -1,3 +1,4 @@\n" +
+          " line2\n" +
+          " line3\n" +
+          "-line4\n" +
+          " line4\n" +
+          " line5\n";
+
+        const expected = {
+          hunks: [
+            {
+              oldStart: 1,
+              oldLines: 5,
+              newStart: 1,
+              newLines: 3,
+              lines: [" line2", " line3", "-line4", "-line4", " line5"],
+            },
+          ],
+        };
+
+        expect(merge(mine, theirs)).to.eql(expected);
+        expect(merge(theirs, mine)).to.eql(expected);
+      });
+      it("should conflict removal disjoint sets", function () {
+        const mine =
+          "@@ -1,3 +1,4 @@\n" +
+          " line2\n" +
+          " line3\n" +
+          "-line4\n" +
+          "-line4\n" +
+          "-line4\n" +
+          " line5\n";
+        const theirs =
+          "@@ -1,3 +1,4 @@\n" +
+          " line2\n" +
+          " line3\n" +
+          "-line4\n" +
+          "-line4\n" +
+          "-line5\n" +
+          " line5\n";
 
         const expected = {
           hunks: [
@@ -358,25 +342,17 @@ describe('patch/merge', function() {
               newStart: 1,
               newLines: 3,
               lines: [
-                ' line2',
-                ' line3',
+                " line2",
+                " line3",
                 {
                   conflict: true,
-                  mine: [
-                    '-line4',
-                    '-line4',
-                    '-line4'
-                  ],
-                  theirs: [
-                    '-line4',
-                    '-line4',
-                    '-line5'
-                  ]
+                  mine: ["-line4", "-line4", "-line4"],
+                  theirs: ["-line4", "-line4", "-line5"],
                 },
-                ' line5'
-              ]
-            }
-          ]
+                " line5",
+              ],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
@@ -385,23 +361,23 @@ describe('patch/merge', function() {
         expect(merge(theirs, mine)).to.eql(expected);
       });
 
-      it('should conflict removal disjoint context', function() {
+      it("should conflict removal disjoint context", function () {
         const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + ' line2\n'
-              + ' line3\n'
-              + '-line4\n'
-              + '-line4\n'
-              + '-line4\n'
-              + ' line5\n';
+          "@@ -1,3 +1,4 @@\n" +
+          " line2\n" +
+          " line3\n" +
+          "-line4\n" +
+          "-line4\n" +
+          "-line4\n" +
+          " line5\n";
         const theirs =
-              '@@ -1,3 +1,4 @@\n'
-              + ' line2\n'
-              + ' line3\n'
-              + '-line4\n'
-              + '-line4\n'
-              + ' line5\n'
-              + ' line5\n';
+          "@@ -1,3 +1,4 @@\n" +
+          " line2\n" +
+          " line3\n" +
+          "-line4\n" +
+          "-line4\n" +
+          " line5\n" +
+          " line5\n";
 
         const expected = {
           hunks: [
@@ -411,25 +387,18 @@ describe('patch/merge', function() {
               newStart: 1,
               newLines: 4,
               lines: [
-                ' line2',
-                ' line3',
+                " line2",
+                " line3",
                 {
                   conflict: true,
-                  mine: [
-                    '-line4',
-                    '-line4',
-                    '-line4'
-                  ],
-                  theirs: [
-                    '-line4',
-                    '-line4'
-                  ]
+                  mine: ["-line4", "-line4", "-line4"],
+                  theirs: ["-line4", "-line4"],
                 },
-                ' line5',
-                ' line5'
-              ]
-            }
-          ]
+                " line5",
+                " line5",
+              ],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
@@ -439,19 +408,16 @@ describe('patch/merge', function() {
       });
 
       // These are all conflicts. A conflict is anything that is on the same desired line that is not identical
-      it('should conflict two additions at the same line', function() {
+      it("should conflict two additions at the same line", function () {
         const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + ' line2\n'
-              + ' line3\n'
-              + '+line4-1\n'
-              + '+line4-2\n'
-              + '+line4-3\n'
-              + ' line5\n';
-        const theirs =
-              '@@ -2 +2,2 @@\n'
-              + ' line3\n'
-              + '+line4-4\n';
+          "@@ -1,3 +1,4 @@\n" +
+          " line2\n" +
+          " line3\n" +
+          "+line4-1\n" +
+          "+line4-2\n" +
+          "+line4-3\n" +
+          " line5\n";
+        const theirs = "@@ -2 +2,2 @@\n" + " line3\n" + "+line4-4\n";
         const expected = {
           hunks: [
             {
@@ -460,23 +426,17 @@ describe('patch/merge', function() {
               oldLines: 3,
               newStart: 1,
               lines: [
-                ' line2',
-                ' line3',
+                " line2",
+                " line3",
                 {
                   conflict: true,
-                  mine: [
-                    '+line4-1',
-                    '+line4-2',
-                    '+line4-3'
-                  ],
-                  theirs: [
-                    '+line4-4'
-                  ]
+                  mine: ["+line4-1", "+line4-2", "+line4-3"],
+                  theirs: ["+line4-4"],
                 },
-                ' line5'
-              ]
-            }
-          ]
+                " line5",
+              ],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
@@ -484,20 +444,20 @@ describe('patch/merge', function() {
         swapConflicts(expected);
         expect(merge(theirs, mine)).to.eql(expected);
       });
-      it('should conflict addition supersets', function() {
+      it("should conflict addition supersets", function () {
         const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + ' line2\n'
-              + ' line3\n'
-              + '+line4\n'
-              + '+line4\n'
-              + ' line5\n';
+          "@@ -1,3 +1,4 @@\n" +
+          " line2\n" +
+          " line3\n" +
+          "+line4\n" +
+          "+line4\n" +
+          " line5\n";
         const theirs =
-              '@@ -1,3 +1,4 @@\n'
-              + ' line2\n'
-              + ' line3\n'
-              + '+line4\n'
-              + ' line5\n';
+          "@@ -1,3 +1,4 @@\n" +
+          " line2\n" +
+          " line3\n" +
+          "+line4\n" +
+          " line5\n";
         const expected = {
           hunks: [
             {
@@ -506,22 +466,17 @@ describe('patch/merge', function() {
               oldLines: 3,
               newStart: 1,
               lines: [
-                ' line2',
-                ' line3',
+                " line2",
+                " line3",
                 {
                   conflict: true,
-                  mine: [
-                    '+line4',
-                    '+line4'
-                  ],
-                  theirs: [
-                    '+line4'
-                  ]
+                  mine: ["+line4", "+line4"],
+                  theirs: ["+line4"],
                 },
-                ' line5'
-              ]
-            }
-          ]
+                " line5",
+              ],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
@@ -529,15 +484,9 @@ describe('patch/merge', function() {
         swapConflicts(expected);
         expect(merge(theirs, mine)).to.eql(expected);
       });
-      it('should handle removal and edit (add+remove) at the same line', function() {
-        const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + ' line2\n'
-              + '-line3\n';
-        const theirs =
-              '@@ -2 +2,2 @@\n'
-              + '-line3\n'
-              + '+line4\n';
+      it("should handle removal and edit (add+remove) at the same line", function () {
+        const mine = "@@ -1,3 +1,4 @@\n" + " line2\n" + "-line3\n";
+        const theirs = "@@ -2 +2,2 @@\n" + "-line3\n" + "+line4\n";
         const expected = {
           hunks: [
             {
@@ -546,174 +495,15 @@ describe('patch/merge', function() {
               oldLines: 2,
               newStart: 1,
               lines: [
-                ' line2',
+                " line2",
                 {
                   conflict: true,
-                  mine: [
-                    '-line3'
-                  ],
-                  theirs: [
-                    '-line3',
-                    '+line4'
-                  ]
-                }
-              ]
-            }
-          ]
-        };
-
-        expect(merge(mine, theirs)).to.eql(expected);
-
-        swapConflicts(expected);
-        expect(merge(theirs, mine)).to.eql(expected);
-      });
-      it('should handle edit (add+remove) on multiple lines', function() {
-        const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + '-line2\n'
-              + ' line3\n'
-              + ' line3\n'
-              + ' line5\n';
-        const theirs =
-              '@@ -2 +2,2 @@\n'
-              + '-line3\n'
-              + '-line3\n'
-              + '+line4\n'
-              + '+line4\n';
-
-        const expected = {
-          hunks: [
-            {
-              oldStart: 1, oldLines: 4,
-              newStart: 1, newLines: 3,
-              lines: [
-                '-line2',
-                '-line3',
-                '-line3',
-                '+line4',
-                '+line4',
-                ' line5'
-              ]
-            }
-          ]
-        };
-
-        expect(merge(mine, theirs)).to.eql(expected);
-
-        swapConflicts(expected);
-        expect(merge(theirs, mine)).to.eql(expected);
-      });
-      it('should handle edit (add+remove) past extents', function() {
-        const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + '-line2\n'
-              + ' line3\n'
-              + ' line3\n';
-        const theirs =
-              '@@ -2 +2,2 @@\n'
-              + '-line3\n'
-              + '-line3\n'
-              + '-line5\n'
-              + '+line4\n'
-              + '+line4\n';
-
-        const expected = {
-          hunks: [
-            {
-              oldStart: 1, oldLines: 4,
-              newStart: 1, newLines: 2,
-              lines: [
-                '-line2',
-                '-line3',
-                '-line3',
-                '-line5',
-                '+line4',
-                '+line4'
-              ]
-            }
-          ]
-        };
-
-        expect(merge(mine, theirs)).to.eql(expected);
-
-        swapConflicts(expected);
-        expect(merge(theirs, mine)).to.eql(expected);
-      });
-      it('should handle edit (add+remove) past extents', function() {
-        const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + '-line2\n'
-              + ' line3\n'
-              + ' line3\n';
-        const theirs =
-              '@@ -2 +2,2 @@\n'
-              + '-line3\n'
-              + '-line3\n'
-              + '-line5\n'
-              + '+line4\n'
-              + '+line4\n';
-
-        const expected = {
-          hunks: [
-            {
-              oldStart: 1, oldLines: 4,
-              newStart: 1, newLines: 2,
-              lines: [
-                '-line2',
-                '-line3',
-                '-line3',
-                '-line5',
-                '+line4',
-                '+line4'
-              ]
-            }
-          ]
-        };
-
-        expect(merge(mine, theirs)).to.eql(expected);
-
-        swapConflicts(expected);
-        expect(merge(theirs, mine)).to.eql(expected);
-      });
-      it('should handle edit (add+remove) context mismatch', function() {
-        const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + '-line2\n'
-              + ' line3\n'
-              + ' line4\n';
-        const theirs =
-              '@@ -2 +2,2 @@\n'
-              + '-line3\n'
-              + '-line3\n'
-              + '-line5\n'
-              + '+line4\n'
-              + '+line4\n';
-
-        const expected = {
-          hunks: [
-            {
-              conflict: true,
-              oldStart: 1,
-              newStart: 1,
-              lines: [
-                '-line2',
-                {
-                  conflict: true,
-                  mine: [
-                    ' line3'
-                  ],
-                  theirs: [
-                    '-line3',
-                    '-line3',
-                    '-line5',
-                    '+line4',
-                    '+line4'
-                  ]
+                  mine: ["-line3"],
+                  theirs: ["-line3", "+line4"],
                 },
-                ' line4'
-              ]
-            }
-          ]
+              ],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
@@ -721,20 +511,117 @@ describe('patch/merge', function() {
         swapConflicts(expected);
         expect(merge(theirs, mine)).to.eql(expected);
       });
-      it('should handle edit (add+remove) addition', function() {
+      it("should handle edit (add+remove) on multiple lines", function () {
         const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + '-line2\n'
-              + ' line3\n'
-              + '+line6\n'
-              + ' line3\n';
+          "@@ -1,3 +1,4 @@\n" +
+          "-line2\n" +
+          " line3\n" +
+          " line3\n" +
+          " line5\n";
         const theirs =
-              '@@ -2 +2,2 @@\n'
-              + '-line3\n'
-              + '-line3\n'
-              + '-line5\n'
-              + '+line4\n'
-              + '+line4\n';
+          "@@ -2 +2,2 @@\n" + "-line3\n" + "-line3\n" + "+line4\n" + "+line4\n";
+
+        const expected = {
+          hunks: [
+            {
+              oldStart: 1,
+              oldLines: 4,
+              newStart: 1,
+              newLines: 3,
+              lines: [
+                "-line2",
+                "-line3",
+                "-line3",
+                "+line4",
+                "+line4",
+                " line5",
+              ],
+            },
+          ],
+        };
+
+        expect(merge(mine, theirs)).to.eql(expected);
+
+        swapConflicts(expected);
+        expect(merge(theirs, mine)).to.eql(expected);
+      });
+      it("should handle edit (add+remove) past extents", function () {
+        const mine = "@@ -1,3 +1,4 @@\n" + "-line2\n" + " line3\n" + " line3\n";
+        const theirs =
+          "@@ -2 +2,2 @@\n" +
+          "-line3\n" +
+          "-line3\n" +
+          "-line5\n" +
+          "+line4\n" +
+          "+line4\n";
+
+        const expected = {
+          hunks: [
+            {
+              oldStart: 1,
+              oldLines: 4,
+              newStart: 1,
+              newLines: 2,
+              lines: [
+                "-line2",
+                "-line3",
+                "-line3",
+                "-line5",
+                "+line4",
+                "+line4",
+              ],
+            },
+          ],
+        };
+
+        expect(merge(mine, theirs)).to.eql(expected);
+
+        swapConflicts(expected);
+        expect(merge(theirs, mine)).to.eql(expected);
+      });
+      it("should handle edit (add+remove) past extents", function () {
+        const mine = "@@ -1,3 +1,4 @@\n" + "-line2\n" + " line3\n" + " line3\n";
+        const theirs =
+          "@@ -2 +2,2 @@\n" +
+          "-line3\n" +
+          "-line3\n" +
+          "-line5\n" +
+          "+line4\n" +
+          "+line4\n";
+
+        const expected = {
+          hunks: [
+            {
+              oldStart: 1,
+              oldLines: 4,
+              newStart: 1,
+              newLines: 2,
+              lines: [
+                "-line2",
+                "-line3",
+                "-line3",
+                "-line5",
+                "+line4",
+                "+line4",
+              ],
+            },
+          ],
+        };
+
+        expect(merge(mine, theirs)).to.eql(expected);
+
+        swapConflicts(expected);
+        expect(merge(theirs, mine)).to.eql(expected);
+      });
+      it("should handle edit (add+remove) context mismatch", function () {
+        const mine = "@@ -1,3 +1,4 @@\n" + "-line2\n" + " line3\n" + " line4\n";
+        const theirs =
+          "@@ -2 +2,2 @@\n" +
+          "-line3\n" +
+          "-line3\n" +
+          "-line5\n" +
+          "+line4\n" +
+          "+line4\n";
 
         const expected = {
           hunks: [
@@ -743,71 +630,16 @@ describe('patch/merge', function() {
               oldStart: 1,
               newStart: 1,
               lines: [
-                '-line2',
+                "-line2",
                 {
                   conflict: true,
-                  mine: [
-                    ' line3',
-                    '+line6',
-                    ' line3'
-                  ],
-                  theirs: [
-                    '-line3',
-                    '-line3',
-                    '-line5',
-                    '+line4',
-                    '+line4'
-                  ]
-                }
-              ]
-            }
-          ]
-        };
-
-        expect(merge(mine, theirs)).to.eql(expected);
-
-        swapConflicts(expected);
-        expect(merge(theirs, mine)).to.eql(expected);
-      });
-      it('should handle edit (add+remove) on multiple lines with context', function() {
-        const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + ' line2\n'
-              + '-line3\n'
-              + ' line3\n'
-              + ' line5\n';
-        const theirs =
-              '@@ -2 +2,2 @@\n'
-              + '-line3\n'
-              + '-line3\n'
-              + '+line4\n'
-              + '+line4\n';
-
-        const expected = {
-          hunks: [
-            {
-              conflict: true,
-              oldStart: 1,
-              newStart: 1,
-              lines: [
-                ' line2',
-                {
-                  conflict: true,
-                  mine: [
-                    '-line3'
-                  ],
-                  theirs: [
-                    '-line3',
-                    '-line3',
-                    '+line4',
-                    '+line4'
-                  ]
+                  mine: [" line3"],
+                  theirs: ["-line3", "-line3", "-line5", "+line4", "+line4"],
                 },
-                    ' line3', // TODO: Fix
-                ' line5'
-              ]
-            }
-          ]
+                " line4",
+              ],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
@@ -815,20 +647,93 @@ describe('patch/merge', function() {
         swapConflicts(expected);
         expect(merge(theirs, mine)).to.eql(expected);
       });
-      it('should conflict edit with remove in middle', function() {
+      it("should handle edit (add+remove) addition", function () {
         const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + '-line2\n'
-              + ' line3\n'
-              + '-line3\n'
-              + ' line5\n';
+          "@@ -1,3 +1,4 @@\n" +
+          "-line2\n" +
+          " line3\n" +
+          "+line6\n" +
+          " line3\n";
         const theirs =
-              '@@ -1,3 +1,2 @@\n'
-              + ' line2\n'
-              + '-line3\n'
-              + '-line3\n'
-              + '+line4\n'
-              + '+line4\n';
+          "@@ -2 +2,2 @@\n" +
+          "-line3\n" +
+          "-line3\n" +
+          "-line5\n" +
+          "+line4\n" +
+          "+line4\n";
+
+        const expected = {
+          hunks: [
+            {
+              conflict: true,
+              oldStart: 1,
+              newStart: 1,
+              lines: [
+                "-line2",
+                {
+                  conflict: true,
+                  mine: [" line3", "+line6", " line3"],
+                  theirs: ["-line3", "-line3", "-line5", "+line4", "+line4"],
+                },
+              ],
+            },
+          ],
+        };
+
+        expect(merge(mine, theirs)).to.eql(expected);
+
+        swapConflicts(expected);
+        expect(merge(theirs, mine)).to.eql(expected);
+      });
+      it("should handle edit (add+remove) on multiple lines with context", function () {
+        const mine =
+          "@@ -1,3 +1,4 @@\n" +
+          " line2\n" +
+          "-line3\n" +
+          " line3\n" +
+          " line5\n";
+        const theirs =
+          "@@ -2 +2,2 @@\n" + "-line3\n" + "-line3\n" + "+line4\n" + "+line4\n";
+
+        const expected = {
+          hunks: [
+            {
+              conflict: true,
+              oldStart: 1,
+              newStart: 1,
+              lines: [
+                " line2",
+                {
+                  conflict: true,
+                  mine: ["-line3"],
+                  theirs: ["-line3", "-line3", "+line4", "+line4"],
+                },
+                " line3", // TODO: Fix
+                " line5",
+              ],
+            },
+          ],
+        };
+
+        expect(merge(mine, theirs)).to.eql(expected);
+
+        swapConflicts(expected);
+        expect(merge(theirs, mine)).to.eql(expected);
+      });
+      it("should conflict edit with remove in middle", function () {
+        const mine =
+          "@@ -1,3 +1,4 @@\n" +
+          "-line2\n" +
+          " line3\n" +
+          "-line3\n" +
+          " line5\n";
+        const theirs =
+          "@@ -1,3 +1,2 @@\n" +
+          " line2\n" +
+          "-line3\n" +
+          "-line3\n" +
+          "+line4\n" +
+          "+line4\n";
 
         const expected = {
           hunks: [
@@ -838,24 +743,16 @@ describe('patch/merge', function() {
               oldLines: 4,
               newStart: 1,
               lines: [
-                '-line2',
+                "-line2",
                 {
                   conflict: true,
-                  mine: [
-                    ' line3',
-                    '-line3'
-                  ],
-                  theirs: [
-                    '-line3',
-                    '-line3',
-                    '+line4',
-                    '+line4'
-                  ]
+                  mine: [" line3", "-line3"],
+                  theirs: ["-line3", "-line3", "+line4", "+line4"],
                 },
-                ' line5'
-              ]
-            }
-          ]
+                " line5",
+              ],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
@@ -863,58 +760,39 @@ describe('patch/merge', function() {
         swapConflicts(expected);
         expect(merge(theirs, mine)).to.eql(expected);
       });
-      it('should handle edit and addition with context connextion', function() {
-        const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + ' line2\n'
-              + '-line3\n'
-              + '-line4\n';
-        const theirs =
-              '@@ -2 +2,2 @@\n'
-              + ' line3\n'
-              + ' line4\n'
-              + '+line4\n';
+      it("should handle edit and addition with context connextion", function () {
+        const mine = "@@ -1,3 +1,4 @@\n" + " line2\n" + "-line3\n" + "-line4\n";
+        const theirs = "@@ -2 +2,2 @@\n" + " line3\n" + " line4\n" + "+line4\n";
 
         const expected = {
           hunks: [
             {
-              oldStart: 1, oldLines: 3,
-              newStart: 1, newLines: 2,
-              lines: [
-                ' line2',
-                '-line3',
-                '-line4',
-                '+line4'
-              ]
-            }
-          ]
+              oldStart: 1,
+              oldLines: 3,
+              newStart: 1,
+              newLines: 2,
+              lines: [" line2", "-line3", "-line4", "+line4"],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
         expect(merge(theirs, mine)).to.eql(expected);
       });
 
-      it('should merge removals that start in the leading section', function() {
-        const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + '-line2\n'
-              + '-line3\n';
-        const theirs =
-              '@@ -2 +2,2 @@\n'
-              + '-line3\n'
-              + ' line4\n';
+      it("should merge removals that start in the leading section", function () {
+        const mine = "@@ -1,3 +1,4 @@\n" + "-line2\n" + "-line3\n";
+        const theirs = "@@ -2 +2,2 @@\n" + "-line3\n" + " line4\n";
         const expected = {
           hunks: [
             {
-              oldStart: 1, oldLines: 3,
-              newStart: 1, newLines: 1,
-              lines: [
-                '-line2',
-                '-line3',
-                ' line4'
-              ]
-            }
-          ]
+              oldStart: 1,
+              oldLines: 3,
+              newStart: 1,
+              newLines: 1,
+              lines: ["-line2", "-line3", " line4"],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
@@ -922,22 +800,22 @@ describe('patch/merge', function() {
         swapConflicts(expected);
         expect(merge(theirs, mine)).to.eql(expected);
       });
-      it('should conflict edits that start in the leading section', function() {
+      it("should conflict edits that start in the leading section", function () {
         const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + '-line2\n'
-              + '-line3\n'
-              + '-line3\n'
-              + '-line3\n'
-              + '-line3\n'
-              + '+line4\n';
+          "@@ -1,3 +1,4 @@\n" +
+          "-line2\n" +
+          "-line3\n" +
+          "-line3\n" +
+          "-line3\n" +
+          "-line3\n" +
+          "+line4\n";
         const theirs =
-              '@@ -2 +2,2 @@\n'
-              + ' line3\n'
-              + ' line3\n'
-              + '-line3\n'
-              + '-line3\n'
-              + ' line5\n';
+          "@@ -2 +2,2 @@\n" +
+          " line3\n" +
+          " line3\n" +
+          "-line3\n" +
+          "-line3\n" +
+          " line5\n";
         const expected = {
           hunks: [
             {
@@ -946,27 +824,16 @@ describe('patch/merge', function() {
               oldLines: 6,
               newStart: 1,
               lines: [
-                '-line2',
+                "-line2",
                 {
                   conflict: true,
-                  mine: [
-                    '-line3',
-                    '-line3',
-                    '-line3',
-                    '-line3',
-                    '+line4'
-                  ],
-                  theirs: [
-                    ' line3',
-                    ' line3',
-                    '-line3',
-                    '-line3'
-                  ]
+                  mine: ["-line3", "-line3", "-line3", "-line3", "+line4"],
+                  theirs: [" line3", " line3", "-line3", "-line3"],
                 },
-                ' line5'
-              ]
-            }
-          ]
+                " line5",
+              ],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
@@ -974,15 +841,9 @@ describe('patch/merge', function() {
         swapConflicts(expected);
         expect(merge(theirs, mine)).to.eql(expected);
       });
-      it('should conflict adds that start in the leading section', function() {
-        const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + '+line2\n'
-              + '+line3\n';
-        const theirs =
-              '@@ -2 +2,2 @@\n'
-              + '-line3\n'
-              + ' line4\n';
+      it("should conflict adds that start in the leading section", function () {
+        const mine = "@@ -1,3 +1,4 @@\n" + "+line2\n" + "+line3\n";
+        const theirs = "@@ -2 +2,2 @@\n" + "-line3\n" + " line4\n";
         const expected = {
           hunks: [
             {
@@ -990,20 +851,16 @@ describe('patch/merge', function() {
               oldStart: 1,
               newStart: 1,
               lines: [
-                '+line2',
+                "+line2",
                 {
                   conflict: true,
-                  mine: [
-                    '+line3'
-                  ],
-                  theirs: [
-                    '-line3'
-                  ]
+                  mine: ["+line3"],
+                  theirs: ["-line3"],
                 },
-                ' line4'
-              ]
-            }
-          ]
+                " line4",
+              ],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
@@ -1012,29 +869,29 @@ describe('patch/merge', function() {
         expect(merge(theirs, mine)).to.eql(expected);
       });
 
-      it('should handle multiple conflicts in one hunk', function() {
+      it("should handle multiple conflicts in one hunk", function () {
         const mine =
-              '@@ -1,10 +1,10 @@\n'
-              + ' line1\n'
-              + '-line2\n'
-              + '+line2-1\n'
-              + ' line3\n'
-              + ' line4\n'
-              + ' line5\n'
-              + '-line6\n'
-              + '+line6-1\n'
-              + ' line7\n';
+          "@@ -1,10 +1,10 @@\n" +
+          " line1\n" +
+          "-line2\n" +
+          "+line2-1\n" +
+          " line3\n" +
+          " line4\n" +
+          " line5\n" +
+          "-line6\n" +
+          "+line6-1\n" +
+          " line7\n";
         const theirs =
-              '@@ -1,10 +1,10 @@\n'
-              + ' line1\n'
-              + '-line2\n'
-              + '+line2-2\n'
-              + ' line3\n'
-              + ' line4\n'
-              + ' line5\n'
-              + '-line6\n'
-              + '+line6-2\n'
-              + ' line7\n';
+          "@@ -1,10 +1,10 @@\n" +
+          " line1\n" +
+          "-line2\n" +
+          "+line2-2\n" +
+          " line3\n" +
+          " line4\n" +
+          " line5\n" +
+          "-line6\n" +
+          "+line6-2\n" +
+          " line7\n";
         const expected = {
           hunks: [
             {
@@ -1044,36 +901,24 @@ describe('patch/merge', function() {
               newStart: 1,
               newLines: 7,
               lines: [
-                ' line1',
+                " line1",
                 {
                   conflict: true,
-                  mine: [
-                    '-line2',
-                    '+line2-1'
-                  ],
-                  theirs: [
-                    '-line2',
-                    '+line2-2'
-                  ]
+                  mine: ["-line2", "+line2-1"],
+                  theirs: ["-line2", "+line2-2"],
                 },
-                ' line3',
-                ' line4',
-                ' line5',
+                " line3",
+                " line4",
+                " line5",
                 {
                   conflict: true,
-                  mine: [
-                    '-line6',
-                    '+line6-1'
-                  ],
-                  theirs: [
-                    '-line6',
-                    '+line6-2'
-                  ]
+                  mine: ["-line6", "+line6-1"],
+                  theirs: ["-line6", "+line6-2"],
                 },
-                ' line7'
-              ]
-            }
-          ]
+                " line7",
+              ],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
@@ -1082,31 +927,31 @@ describe('patch/merge', function() {
         expect(merge(theirs, mine)).to.eql(expected);
       });
 
-      it('should remove oldLines if base differs', function() {
+      it("should remove oldLines if base differs", function () {
         const mine =
-              '@@ -1,10 +1,10 @@\n'
-              + ' line1\n'
-              + '-line2\n'
-              + '-line2-0\n'
-              + '+line2-1\n'
-              + ' line3\n'
-              + ' line4\n'
-              + ' line5\n'
-              + '-line6\n'
-              + '+line6-1\n'
-              + ' line7\n';
+          "@@ -1,10 +1,10 @@\n" +
+          " line1\n" +
+          "-line2\n" +
+          "-line2-0\n" +
+          "+line2-1\n" +
+          " line3\n" +
+          " line4\n" +
+          " line5\n" +
+          "-line6\n" +
+          "+line6-1\n" +
+          " line7\n";
         const theirs =
-              '@@ -1,10 +1,10 @@\n'
-              + ' line1\n'
-              + '-line2\n'
-              + '+line2-2\n'
-              + '+line2-3\n'
-              + ' line3\n'
-              + ' line4\n'
-              + ' line5\n'
-              + '-line6\n'
-              + '+line6-2\n'
-              + ' line7\n';
+          "@@ -1,10 +1,10 @@\n" +
+          " line1\n" +
+          "-line2\n" +
+          "+line2-2\n" +
+          "+line2-3\n" +
+          " line3\n" +
+          " line4\n" +
+          " line5\n" +
+          "-line6\n" +
+          "+line6-2\n" +
+          " line7\n";
         const expected = {
           hunks: [
             {
@@ -1114,38 +959,24 @@ describe('patch/merge', function() {
               oldStart: 1,
               newStart: 1,
               lines: [
-                ' line1',
+                " line1",
                 {
                   conflict: true,
-                  mine: [
-                    '-line2',
-                    '-line2-0',
-                    '+line2-1'
-                  ],
-                  theirs: [
-                    '-line2',
-                    '+line2-2',
-                    '+line2-3'
-                  ]
+                  mine: ["-line2", "-line2-0", "+line2-1"],
+                  theirs: ["-line2", "+line2-2", "+line2-3"],
                 },
-                ' line3',
-                ' line4',
-                ' line5',
+                " line3",
+                " line4",
+                " line5",
                 {
                   conflict: true,
-                  mine: [
-                    '-line6',
-                    '+line6-1'
-                  ],
-                  theirs: [
-                    '-line6',
-                    '+line6-2'
-                  ]
+                  mine: ["-line6", "+line6-1"],
+                  theirs: ["-line6", "+line6-2"],
                 },
-                ' line7'
-              ]
-            }
-          ]
+                " line7",
+              ],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
@@ -1154,15 +985,9 @@ describe('patch/merge', function() {
         expect(merge(theirs, mine)).to.eql(expected);
       });
 
-      it('should handle multiple conflict sections', function() {
-        const mine =
-              '@@ -1,3 +1,4 @@\n'
-              + ' line2\n'
-              + ' line3\n';
-        const theirs =
-              '@@ -1 +1,2 @@\n'
-              + ' line3\n'
-              + ' line4\n';
+      it("should handle multiple conflict sections", function () {
+        const mine = "@@ -1,3 +1,4 @@\n" + " line2\n" + " line3\n";
+        const theirs = "@@ -1 +1,2 @@\n" + " line3\n" + " line4\n";
         const expected = {
           hunks: [
             {
@@ -1174,18 +999,12 @@ describe('patch/merge', function() {
               lines: [
                 {
                   conflict: true,
-                  mine: [
-                    ' line2',
-                    ' line3'
-                  ],
-                  theirs: [
-                    ' line3',
-                    ' line4'
-                  ]
-                }
-              ]
-            }
-          ]
+                  mine: [" line2", " line3"],
+                  theirs: [" line3", " line4"],
+                },
+              ],
+            },
+          ],
         };
 
         expect(merge(mine, theirs)).to.eql(expected);
@@ -1195,131 +1014,121 @@ describe('patch/merge', function() {
       });
     });
 
-    it('should handle file name updates', function() {
+    it("should handle file name updates", function () {
       const mine =
-            'Index: test\n'
-            + '===================================================================\n'
-            + '--- test\theader1\n'
-            + '+++ test2\theader2\n';
+        "Index: test\n" +
+        "===================================================================\n" +
+        "--- test\theader1\n" +
+        "+++ test2\theader2\n";
       const theirs =
-            'Index: test\n'
-            + '===================================================================\n'
-            + '--- test\theader1\n'
-            + '+++ test\theader2\n';
+        "Index: test\n" +
+        "===================================================================\n" +
+        "--- test\theader1\n" +
+        "+++ test\theader2\n";
       const expected = {
-        index: 'test',
-        oldFileName: 'test',
-        oldHeader: 'header1',
-        newFileName: 'test2',
-        newHeader: 'header2',
-        hunks: []
+        index: "test",
+        oldFileName: "test",
+        oldHeader: "header1",
+        newFileName: "test2",
+        newHeader: "header2",
+        hunks: [],
       };
       expect(merge(mine, theirs)).to.eql(expected);
       expect(merge(theirs, mine)).to.eql(expected);
     });
-    it('should handle file name conflicts', function() {
+    it("should handle file name conflicts", function () {
       const mine =
-            'Index: test\n'
-            + '===================================================================\n'
-            + '--- test-a\theader-a\n'
-            + '+++ test2\theader2\n';
+        "Index: test\n" +
+        "===================================================================\n" +
+        "--- test-a\theader-a\n" +
+        "+++ test2\theader2\n";
       const theirs =
-            'Index: test\n'
-            + '===================================================================\n'
-            + '--- test-b\theader-b\n'
-            + '+++ test3\theader3\n';
+        "Index: test\n" +
+        "===================================================================\n" +
+        "--- test-b\theader-b\n" +
+        "+++ test3\theader3\n";
       const partialMatch =
-            'Index: test\n'
-            + '===================================================================\n'
-            + '--- test-b\theader-a\n'
-            + '+++ test3\theader3\n';
+        "Index: test\n" +
+        "===================================================================\n" +
+        "--- test-b\theader-a\n" +
+        "+++ test3\theader3\n";
 
       expect(merge(mine, theirs)).to.eql({
         conflict: true,
-        index: 'test',
+        index: "test",
         oldFileName: {
-          mine: 'test-a',
-          theirs: 'test-b'
+          mine: "test-a",
+          theirs: "test-b",
         },
         oldHeader: {
-          mine: 'header-a',
-          theirs: 'header-b'
+          mine: "header-a",
+          theirs: "header-b",
         },
         newFileName: {
-          mine: 'test2',
-          theirs: 'test3'
+          mine: "test2",
+          theirs: "test3",
         },
         newHeader: {
-          mine: 'header2',
-          theirs: 'header3'
+          mine: "header2",
+          theirs: "header3",
         },
-        hunks: []
+        hunks: [],
       });
       expect(merge(mine, partialMatch)).to.eql({
         conflict: true,
-        index: 'test',
+        index: "test",
         oldFileName: {
-          mine: 'test-a',
-          theirs: 'test-b'
+          mine: "test-a",
+          theirs: "test-b",
         },
-        oldHeader: 'header-a',
+        oldHeader: "header-a",
         newFileName: {
-          mine: 'test2',
-          theirs: 'test3'
+          mine: "test2",
+          theirs: "test3",
         },
         newHeader: {
-          mine: 'header2',
-          theirs: 'header3'
+          mine: "header2",
+          theirs: "header3",
         },
-        hunks: []
+        hunks: [],
       });
     });
-    it('should select available headers', function() {
+    it("should select available headers", function () {
       const mine =
-            'Index: test\n'
-            + '===================================================================\n'
-            + '--- test\theader1\n'
-            + '+++ test\theader2\n'
-            + '@@ -1,3 +1,4 @@\n'
-            + ' line2\n'
-            + ' line3\n'
-            + '+line4\n'
-            + ' line5\n';
+        "Index: test\n" +
+        "===================================================================\n" +
+        "--- test\theader1\n" +
+        "+++ test\theader2\n" +
+        "@@ -1,3 +1,4 @@\n" +
+        " line2\n" +
+        " line3\n" +
+        "+line4\n" +
+        " line5\n";
       const theirs =
-            '@@ -25,3 +25,4 @@\n'
-            + ' foo2\n'
-            + ' foo3\n'
-            + '+foo4\n'
-            + ' foo5\n';
+        "@@ -25,3 +25,4 @@\n" + " foo2\n" + " foo3\n" + "+foo4\n" + " foo5\n";
 
       const expected = {
-        index: 'test',
-        oldFileName: 'test',
-        oldHeader: 'header1',
-        newFileName: 'test',
-        newHeader: 'header2',
+        index: "test",
+        oldFileName: "test",
+        oldHeader: "header1",
+        newFileName: "test",
+        newHeader: "header2",
         hunks: [
           {
-            oldStart: 1, oldLines: 3,
-            newStart: 1, newLines: 4,
-            lines: [
-              ' line2',
-              ' line3',
-              '+line4',
-              ' line5'
-            ]
+            oldStart: 1,
+            oldLines: 3,
+            newStart: 1,
+            newLines: 4,
+            lines: [" line2", " line3", "+line4", " line5"],
           },
           {
-            oldStart: 25, oldLines: 3,
-            newStart: 26, newLines: 4,
-            lines: [
-              ' foo2',
-              ' foo3',
-              '+foo4',
-              ' foo5'
-            ]
-          }
-        ]
+            oldStart: 25,
+            oldLines: 3,
+            newStart: 26,
+            newLines: 4,
+            lines: [" foo2", " foo3", "+foo4", " foo5"],
+          },
+        ],
       };
 
       expect(merge(mine, theirs)).to.eql(expected);
@@ -1328,33 +1137,30 @@ describe('patch/merge', function() {
       expect(merge(theirs, parsePatch(mine)[0])).to.eql(expected);
     });
 
-    it('should diff from base', function() {
-      expect(merge('foo\nbar\nbaz\n', 'foo\nbaz\nbat\n', 'foo\nbaz\n')).to.eql({
+    it("should diff from base", function () {
+      expect(merge("foo\nbar\nbaz\n", "foo\nbaz\nbat\n", "foo\nbaz\n")).to.eql({
         hunks: [
           {
-            oldStart: 1, oldLines: 2,
-            newStart: 1, newLines: 4,
-            lines: [
-              ' foo',
-              '+bar',
-              ' baz',
-              '+bat'
-            ]
-          }
-        ]
+            oldStart: 1,
+            oldLines: 2,
+            newStart: 1,
+            newLines: 4,
+            lines: [" foo", "+bar", " baz", "+bat"],
+          },
+        ],
       });
     });
-    it('should error if not passed base', function() {
-      expect(function() {
-        merge('foo', 'foo');
-      }).to['throw']('Must provide a base reference or pass in a patch');
+    it("should error if not passed base", function () {
+      expect(function () {
+        merge("foo", "foo");
+      }).to["throw"]("Must provide a base reference or pass in a patch");
     });
   });
 });
 
 function swapConflicts(expected) {
-  expected.hunks.forEach(function(hunk) {
-    hunk.lines.forEach(function(line) {
+  expected.hunks.forEach(function (hunk) {
+    hunk.lines.forEach(function (line) {
       if (line.conflict) {
         let tmp = line.mine;
         line.mine = line.theirs;

@@ -1,8 +1,7 @@
-import Diff from './base';
-import {lineDiff} from './line';
+import Diff from "./base.js";
+import { lineDiff } from "./line.js";
 
 const objectPrototypeToString = Object.prototype.toString;
-
 
 export const jsonDiff = new Diff();
 // Discriminate between two lines of pretty-printed, serialized JSON where one of them has a
@@ -10,16 +9,32 @@ export const jsonDiff = new Diff();
 jsonDiff.useLongestToken = true;
 
 jsonDiff.tokenize = lineDiff.tokenize;
-jsonDiff.castInput = function(value) {
-  const {undefinedReplacement, stringifyReplacer = (k, v) => typeof v === 'undefined' ? undefinedReplacement : v} = this.options;
+jsonDiff.castInput = function (value) {
+  const {
+    undefinedReplacement,
+    stringifyReplacer = (k, v) =>
+      typeof v === "undefined" ? undefinedReplacement : v,
+  } = this.options;
 
-  return typeof value === 'string' ? value : JSON.stringify(canonicalize(value, null, null, stringifyReplacer), stringifyReplacer, '  ');
+  return typeof value === "string"
+    ? value
+    : JSON.stringify(
+        canonicalize(value, null, null, stringifyReplacer),
+        stringifyReplacer,
+        "  "
+      );
 };
-jsonDiff.equals = function(left, right) {
-  return Diff.prototype.equals.call(jsonDiff, left.replace(/,([\r\n])/g, '$1'), right.replace(/,([\r\n])/g, '$1'));
+jsonDiff.equals = function (left, right) {
+  return Diff.prototype.equals.call(
+    jsonDiff,
+    left.replace(/,([\r\n])/g, "$1"),
+    right.replace(/,([\r\n])/g, "$1")
+  );
 };
 
-export function diffJson(oldObj, newObj, options) { return jsonDiff.diff(oldObj, newObj, options); }
+export function diffJson(oldObj, newObj, options) {
+  return jsonDiff.diff(oldObj, newObj, options);
+}
 
 // This function handles the presence of circular references by bailing out when encountering an
 // object that is already on the "stack" of items being processed. Accepts an optional replacer
@@ -41,12 +56,18 @@ export function canonicalize(obj, stack, replacementStack, replacer, key) {
 
   let canonicalizedObj;
 
-  if ('[object Array]' === objectPrototypeToString.call(obj)) {
+  if ("[object Array]" === objectPrototypeToString.call(obj)) {
     stack.push(obj);
     canonicalizedObj = new Array(obj.length);
     replacementStack.push(canonicalizedObj);
     for (i = 0; i < obj.length; i += 1) {
-      canonicalizedObj[i] = canonicalize(obj[i], stack, replacementStack, replacer, key);
+      canonicalizedObj[i] = canonicalize(
+        obj[i],
+        stack,
+        replacementStack,
+        replacer,
+        key
+      );
     }
     stack.pop();
     replacementStack.pop();
@@ -57,12 +78,12 @@ export function canonicalize(obj, stack, replacementStack, replacer, key) {
     obj = obj.toJSON();
   }
 
-  if (typeof obj === 'object' && obj !== null) {
+  if (typeof obj === "object" && obj !== null) {
     stack.push(obj);
     canonicalizedObj = {};
     replacementStack.push(canonicalizedObj);
     let sortedKeys = [],
-        key;
+      key;
     for (key in obj) {
       /* istanbul ignore else */
       if (obj.hasOwnProperty(key)) {
@@ -72,7 +93,13 @@ export function canonicalize(obj, stack, replacementStack, replacer, key) {
     sortedKeys.sort();
     for (i = 0; i < sortedKeys.length; i += 1) {
       key = sortedKeys[i];
-      canonicalizedObj[key] = canonicalize(obj[key], stack, replacementStack, replacer, key);
+      canonicalizedObj[key] = canonicalize(
+        obj[key],
+        stack,
+        replacementStack,
+        replacer,
+        key
+      );
     }
     stack.pop();
     replacementStack.pop();
