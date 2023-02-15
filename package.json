@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "clean": "rimraf ./dist",
-    "test": "node --test test",
+    "test": "node --test-reporter spec --test test",
     "prepend-license": "node ./scripts/prepend-license.js",
     "build": "npm run clean && rollup --config rollup.config.js && npm run prepend-license"
   },
